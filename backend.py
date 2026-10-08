@@ -584,6 +584,9 @@ _add_unique_indicator_alias("unemployment rate", ["unemployment rate", "15 years
 _GENERIC_EMPLOYMENT_ALIASES = {
     "unemployment rate": "Unemployment Rate, Age 15 Years and Above (%)",
     "unemployment": "Unemployment Rate, Age 15 Years and Above (%)",
+    "employment": "Unemployment Rate, Age 15 Years and Above (%)",
+    "employment rate": "Unemployment Rate, Age 15 Years and Above (%)",
+    "employment situation": "Unemployment Rate, Age 15 Years and Above (%)",
     "labour force participation": "Labour Force Participation Rate, Age 15 Years and Above (%)",
     "labour force participation rate": "Labour Force Participation Rate, Age 15 Years and Above (%)",
     "labor force participation": "Labour Force Participation Rate, Age 15 Years and Above (%)",
@@ -3656,7 +3659,7 @@ def safe_parse_question_with_gemini(
 # 12A. DETERMINISTIC FAST-PATH PARSER
 # ============================================================
 
-BACKEND_BUILD = "2D-2026-10-07"
+BACKEND_BUILD = "2E-2026-10-08"
 
 def _phrase_in_question(question_normalized, phrase):
     """Token-boundary phrase matching for deterministic parsing."""
@@ -3828,7 +3831,7 @@ def try_deterministic_question_plan(question):
         operation = "rank"
     elif any(phrase in q_for_intent for phrase in ["trend", "over time", "time series"]):
         operation = "trend"
-    elif any(phrase in q_for_intent for phrase in ["compare", "comparison", "versus", " vs "]):
+    elif any(phrase in q_for_intent for phrase in ["compare", "comparison", "compared to", "compared with", "versus", " vs "]):
         operation = "compare"
     else:
         # Any simple state + indicator request is safely a lookup.
@@ -3891,6 +3894,65 @@ def try_deterministic_question_plan(question):
 # 13. QUESTION-UNDERSTANDING LAYER
 # ============================================================
 
+_UNSUPPORTED_GEO_NAMES = {
+    "mumbai": "Mumbai is a city; the dataset contains Maharashtra at state level",
+    "delhi": "Delhi is not included among the 28 states or the India aggregate in this dataset",
+    "new delhi": "New Delhi is not a separate geography in this state-level dataset",
+    "chennai": "Chennai is a city; the dataset contains Tamil Nadu at state level",
+    "kolkata": "Kolkata is a city; the dataset contains West Bengal at state level",
+    "bengaluru": "Bengaluru is a city; the dataset contains Karnataka at state level",
+    "bangalore": "Bangalore is a city; the dataset contains Karnataka at state level",
+    "hyderabad": "Hyderabad is a city; the dataset contains Telangana at state level",
+    "pune": "Pune is a city; the dataset contains Maharashtra at state level",
+}
+
+def _preflight_clarification(question):
+    q = normalize_text(question)
+    unsupported = []
+    for name, description in _UNSUPPORTED_GEO_NAMES.items():
+        if _phrase_in_question(q, name):
+            unsupported.append((name, description))
+    # Deduplicate overlapping New Delhi / Delhi mentions.
+    if any(name == "new delhi" for name, _ in unsupported):
+        unsupported = [(name, desc) for name, desc in unsupported if name != "delhi"]
+    if unsupported:
+        return ("Unsupported geography: " + "; ".join(desc for _, desc in unsupported)
+                + ". Please choose one of the 28 supported states or India. "
+                + "I will not substitute a city with its state without your confirmation.")
+    indicator = _extract_indicator_from_question(question)
+    if not indicator:
+        states = _extract_states_from_question(question)
+        if states:
+            return ("Which indicator would you like to analyse for "
+                    + ", ".join(states) + "? For example, unemployment rate, "
+                    + "population density, or forest cover. Please specify the indicator.")
+        return ("Sankhyaki supports verified state-level demography and employment "
+                "indicators for 28 states and India. Please specify a supported "
+                "geography and indicator (for example, Bihar's unemployment rate).")
+    return None
+
+def _latest_common_comparison_year(plan):
+    if plan.operation != "compare" or plan.years or len(plan.states) < 2:
+        return plan, None
+    resolved = [resolve_state(state) for state in plan.states]
+    if any(r["status"] != "resolved" for r in resolved):
+        return plan, None
+    indicator_resolution = resolve_indicator(plan.indicator)
+    if indicator_resolution["status"] != "resolved":
+        return plan, None
+    canonical = indicator_resolution["canonical"]
+    states = list(dict.fromkeys(r["canonical"] for r in resolved))
+    common = None
+    for state in states:
+        years = set(get_available_years(state, canonical))
+        common = years if common is None else common & years
+    if not common:
+        return plan, ("There is no common available year for " + canonical
+                      + " across " + ", ".join(states)
+                      + ". I cannot make a like-for-like comparison from the available data.")
+    return plan.model_copy(update={"states": states, "indicator": canonical,
+                                   "years": [max(common)]}), None
+
 def understand_question(
     question
 ):
@@ -3901,6 +3963,13 @@ def understand_question(
     only when deterministic interpretation is not sufficiently confident.
     Every candidate plan still passes through the same deterministic validator.
     """
+    clarification = _preflight_clarification(question)
+    if clarification:
+        return {"status": "clarification_required", "question": question,
+                "plan": None, "validation": None,
+                "parser": {"parser_mode": "deterministic_preflight"},
+                "message": clarification}
+
     local_result = try_deterministic_question_plan(question)
 
     if local_result.get("success"):
@@ -3979,6 +4048,13 @@ def understand_question(
             parser_result["plan"] = candidate_plan
             parser_result["year_resolution"] = year_resolution
             parser_result["resolved_year"] = resolved_year
+
+    candidate_plan, comparison_issue = _latest_common_comparison_year(candidate_plan)
+    if comparison_issue:
+        return {"status": "clarification_required", "question": question,
+                "plan": candidate_plan, "validation": None,
+                "parser": parser_result, "message": comparison_issue}
+    parser_result["plan"] = candidate_plan
 
     validation = validate_query_plan(candidate_plan)
 
@@ -5816,7 +5892,7 @@ def ask_demography(
         timings["total_seconds"] = time.perf_counter() - total_start
         return make_chatbot_result(
             status="parser_error", question=question,
-            message=messages.get(error_type, understanding.get("message") or "The natural-language parser is temporarily unavailable."),
+            message=messages.get(error_type, understanding.get("message") or "The natural-language parser is temporarily unavailable.") + " Please try a supported state, indicator and optional year; straightforward data queries can be answered without the language model.",
             parser=parser_result, timings=timings,
         )
 
