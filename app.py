@@ -571,6 +571,31 @@ st.markdown("""<style>
 </style>""",unsafe_allow_html=True)
 
 
+
+# Targeted polish: preserve the original landing proportions and fix only defects.
+st.markdown("""<style>
+/* Keep the original large login card and logo; provide bottom breathing room. */
+.st-key-create_account_from_login {margin-bottom:1.65rem !important;}
+.auth-brand-row {gap:7px !important;}
+.auth-brand-row .brand-subtitle {margin-top:.08rem !important;}
+/* Sidebar: restore generous branding and keep the profile clear of sign-out. */
+.sidebar-brand {margin-bottom:1.45rem !important;gap:.5rem !important;}
+.sidebar-brand img {width:70px !important;height:70px !important;}
+.profile-card {margin-top:1.25rem !important;padding-top:1rem !important;padding-bottom:.8rem !important;}
+.profile-email {margin-bottom:.45rem !important;overflow-wrap:anywhere !important;}
+.st-key-nav_signout {margin-top:.65rem !important;}
+/* Neutral keyboard focus instead of a distracting red input border. */
+[data-testid="stChatInput"]:focus-within,
+[data-testid="stChatInput"] > div:focus-within,
+[data-testid="stChatInput"] textarea:focus,
+[data-testid="stChatInput"] textarea:focus-visible {
+  border-color:#D9A34E !important;
+  outline:none !important;
+  box-shadow:0 0 0 1px rgba(217,163,78,.25) !important;
+}
+/* Keep native focus indication for keyboard accessibility on controls. */
+</style>""",unsafe_allow_html=True)
+
 # ============================================================
 # 8. AUTHENTICATION PAGES
 # ============================================================
@@ -602,62 +627,8 @@ def _landing_background_css():
     </style>""",unsafe_allow_html=True)
 
 
-# Final viewport/layout refinements. Keep this separate from the main theme CSS.
-def apply_layout_refinements(auth=False):
-    if auth:
-        st.markdown("""<style>
-        /* Login: eliminate artificial minimum height + oversized bottom padding. */
-        [data-testid="stMainBlockContainer"], .block-container {
-            min-height:0 !important;
-            padding-top:clamp(.3rem,1.3vh,.85rem) !important;
-            padding-bottom:clamp(.5rem,1.2vh,1rem) !important;
-        }
-        [data-testid="stMain"] {min-height:100dvh !important;}
-        .auth-brand-row img {width:clamp(66px,10vh,94px) !important;height:clamp(66px,10vh,94px) !important;}
-        .hero-heading {font-size:clamp(1.9rem,4.6vh,2.65rem) !important;margin-top:clamp(.4rem,2vh,1.5rem) !important;}
-        .hero-description {margin-top:.8rem !important;font-size:clamp(.84rem,1.65vh,1rem) !important;}
-        .login-title {font-size:clamp(1.35rem,3.1vh,1.7rem) !important;}
-        .login-subtitle {margin:.2rem 0 .5rem !important;}
-        [data-testid="stForm"] {padding:clamp(.6rem,1.3vh,1rem) !important;}
-        [data-testid="stForm"] [data-testid="stVerticalBlock"] {gap:clamp(.3rem,.8vh,.7rem) !important;}
-        .account-question {margin-top:.4rem !important;}
-        .st-key-create_account_from_login button {min-height:2.2rem !important;}
-        .stApp [data-testid="stMain"] > div {scrollbar-width:none;}
-        .stApp [data-testid="stMain"] > div::-webkit-scrollbar {display:none;}
-        @media(max-width:850px), (max-height:650px) {
-           [data-testid="stMain"] {overflow-y:auto !important;}
-           .block-container {padding-bottom:1.5rem !important;}
-        }
-        </style>""",unsafe_allow_html=True)
-    else:
-        st.markdown("""<style>
-        /* Full-width conversation composer, without the left/right strips. */
-        [data-testid="stBottom"], [data-testid="stBottomBlockContainer"] {
-           left:0 !important;right:0 !important;max-width:none !important;
-           width:100% !important;margin:0 !important;
-           background:#FBF5E9 !important;
-        }
-        [data-testid="stBottom"] {padding:0 0 10px !important;}
-        [data-testid="stBottomBlockContainer"] {padding:0 12px !important;box-sizing:border-box !important;}
-        [data-testid="stChatInput"] {width:100% !important;max-width:none !important;}
-        [data-testid="stChatInput"] button {flex:0 0 42px !important;display:flex !important;align-items:center !important;justify-content:center !important;}
-        [data-testid="stChatInput"] button svg {width:21px !important;height:21px !important;flex-shrink:0 !important;}
-        /* Compact navigation so account actions remain visible at laptop heights. */
-        [data-testid="stSidebar"] > div:first-child {padding:.65rem .8rem !important;}
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:.55rem !important;}
-        [data-testid="stSidebar"] .stButton > button {min-height:clamp(38px,5.8vh,48px) !important;padding:0 .85rem !important;}
-        .sidebar-brand {margin-bottom:.45rem !important;}
-        .sidebar-brand img {width:58px !important;height:58px !important;}
-        .profile-card {margin-top:.55rem !important;padding-top:.55rem !important;}
-        [data-testid="stSidebar"] {scrollbar-width:none;}
-        [data-testid="stSidebar"]::-webkit-scrollbar,
-        [data-testid="stSidebar"] *::-webkit-scrollbar {display:none;}
-        </style>""",unsafe_allow_html=True)
-
-
 def _hide_sidebar_for_auth():
     _landing_background_css()
-    apply_layout_refinements(auth=True)
     st.markdown(
         """
         <style>
@@ -700,7 +671,7 @@ def render_login_page():
         )
 
     with centre_col:
-        st.markdown("<div class='hero-art-clearance' style='min-height:clamp(80px,16vh,180px)'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='hero-art-clearance' style='min-height:230px'></div>", unsafe_allow_html=True)
 
     with right_col:
         st.markdown(
@@ -801,7 +772,6 @@ def render_authentication():
 # ============================================================
 
 def render_sidebar():
-    apply_layout_refinements(auth=False)
     user = st.session_state.user or {}
     with st.sidebar:
         # Canonical logo + product name. Navigation is intentionally left-aligned.
