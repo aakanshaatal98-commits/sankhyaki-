@@ -1172,8 +1172,8 @@ def render_chat_page():
                 copy_text = str(message.get("content") or "")
                 if role == "assistant" and isinstance(message.get("result"), dict):
                     copy_text = str(message["result"].get("answer") or message["result"].get("response") or copy_text)
-                if copy_text.strip():
-                    with st.popover("⧉ Copy", help="Copy this message to your clipboard"):
+                if role == "assistant" and copy_text.strip():
+                    with st.popover("⧉ Copy", help="Copy this answer to your clipboard"):
                         st.code(copy_text, language=None, wrap_lines=True)
 
     prompt = st.chat_input("Ask Sankhyaki...")
