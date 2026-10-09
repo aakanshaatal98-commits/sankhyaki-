@@ -808,7 +808,7 @@ def _landing_background_css():
     /* Lift only the login column to align its heading with the brand at upper left. */
     @media(min-width:901px) {{
       [data-testid="stMainBlockContainer"]:has(.auth-brand-row) [data-testid="stColumn"]:has(.login-title) {{
-        transform:translateY(-185px);
+        transform:translateY(-125px);
       }}
     }}
     [data-testid="stForm"] {{background:rgba(255,252,247,.91);padding:1.25rem;border-radius:16px;border:1px solid #ead7bb;}}
