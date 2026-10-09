@@ -576,7 +576,7 @@ st.markdown("""<style>
 st.markdown("""<style>
 /* Keep the original large login card and logo; provide bottom breathing room. */
 .st-key-create_account_from_login {margin-bottom:1.65rem !important;}
-.auth-brand-row {gap:7px !important;}
+.auth-brand-row {gap:4px !important;}
 .auth-brand-row .brand-subtitle {margin-top:.08rem !important;}
 /* Sidebar: restore generous branding and keep the profile clear of sign-out. */
 .sidebar-brand {margin-bottom:1.45rem !important;gap:.5rem !important;}
@@ -790,40 +790,16 @@ def _landing_background_css():
         background-repeat:no-repeat !important; background-attachment:fixed !important;
     }}
     [data-testid="stMainBlockContainer"] {{min-height:calc(100dvh - 4rem);}}
-    
-.auth-brand-row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-bottom: -55px;
-}
-
-.auth-brand-row img {
-    width: 200px;
-    height: 200px;
-    object-fit: contain;
-    flex-shrink: 0;
-}
-
-.auth-brand-row .brand-name {
-    font-size: 3.5rem;
-    font-weight: 850;
-    line-height: 1.0;
-    color: #241B16;
-    letter-spacing: -.035em;
-}
-
-.auth-brand-row .brand-subtitle {
-    font-size: 1.35rem;
-    line-height: 1.15;
-    margin-top: 0.1rem;
-    color: #55483b;
-}
-
-[data-testid="stMainBlockContainer"]:has(.auth-brand-row) .hero-heading {
-    margin-top: 0rem;
-}
-
+    /* Landing-page branding: larger mark, tighter text, closer headline. */
+    .auth-brand-row {{display:flex;align-items:center;gap:4px;margin-bottom:-55px;}}
+    .auth-brand-row img {{width:200px;height:200px;object-fit:contain;flex-shrink:0;}}
+    .auth-brand-row .brand-name {{font-size:3.5rem;font-weight:850;line-height:1.0;color:#241B16;letter-spacing:-.035em;}}
+    .auth-brand-row .brand-subtitle {{font-size:1.35rem;line-height:1.15;margin-top:.1rem;color:#55483b;}}
+    [data-testid="stMainBlockContainer"]:has(.auth-brand-row) .hero-heading {{margin-top:0rem;}}
+    /* The hero is vertically centered against the taller login form;
+       lift its content without changing the login form or column layout. */
+    [data-testid="stMainBlockContainer"]:has(.auth-brand-row) .hero-heading {{transform:translateY(-65px);}}
+    [data-testid="stMainBlockContainer"]:has(.auth-brand-row) .hero-description {{transform:translateY(-65px);}}
     [data-testid="stForm"] {{background:rgba(255,252,247,.91);padding:1.25rem;border-radius:16px;border:1px solid #ead7bb;}}
     @media(max-width:800px) {{
        .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"] {{background-position:52% center !important;}}
