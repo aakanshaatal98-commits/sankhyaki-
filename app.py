@@ -791,11 +791,11 @@ def _landing_background_css():
     }}
     [data-testid="stMainBlockContainer"] {{min-height:calc(100dvh - 4rem);}}
     /* Landing-page branding: larger mark, tighter text, closer headline. */
-    .auth-brand-row {{display:flex;align-items:center;gap:4px;margin-bottom:-55px;}}
+    .auth-brand-row {{display:flex;align-items:center;gap:0px;margin-bottom:-85px;}}
     /* Desktop-only: align branding top with the raised login heading.
        Visual translation leaves the headline and other elements in place. */
     @media(min-width:901px) {{
-      [data-testid="stMainBlockContainer"]:has(.auth-brand-row) .auth-brand-row {{transform:translateY(-70px);}}
+      [data-testid="stMainBlockContainer"]:has(.auth-brand-row) .auth-brand-row {{transform:translate(-18px,-70px);}}
     }}
     .auth-brand-row img {{width:200px;height:200px;object-fit:contain;flex-shrink:0;}}
     .auth-brand-row .brand-name {{font-size:3.5rem;font-weight:850;line-height:1.0;color:#241B16;letter-spacing:-.035em;}}
