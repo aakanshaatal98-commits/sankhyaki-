@@ -680,6 +680,61 @@ st.markdown("""<style>
 </style>""", unsafe_allow_html=True)
 
 # ============================================================
+# 7B. CHAT COMPOSER OUTLINE + SEND ARROW ALIGNMENT
+# Deliberately scoped to the chat composer; all other UI remains unchanged.
+# ============================================================
+st.markdown("""<style>
+/* Inset border remains continuous even when Streamlit's internal layers
+   paint over the outer edge; clipping follows the same rounded silhouette. */
+[data-testid="stChatInput"] {
+    box-sizing: border-box !important;
+    position: relative !important;
+    border: 1px solid #D9A34E !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    box-shadow: inset 0 0 0 1px #D9A34E !important;
+}
+[data-testid="stChatInput"]:focus-within {
+    border-color: #C88C29 !important;
+    box-shadow: inset 0 0 0 1px #C88C29 !important;
+}
+/* Leave the outer ring intact while removing inner outlines. */
+[data-testid="stChatInput"] > div {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+/* Center the circular send control within the 60px input height. */
+[data-testid="stChatInput"] button {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    margin: auto 10px auto 0 !important;
+    align-self: center !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    line-height: 1 !important;
+    border-radius: 50% !important;
+    box-sizing: border-box !important;
+}
+[data-testid="stChatInput"] button svg {
+    display: block !important;
+    width: 20px !important;
+    height: 20px !important;
+    margin: 0 !important;
+    transform: none !important;
+    flex-shrink: 0 !important;
+}
+</style>""", unsafe_allow_html=True)
+
+# ============================================================
 # 8. AUTHENTICATION PAGES
 # ============================================================
 
