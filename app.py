@@ -735,6 +735,44 @@ st.markdown("""<style>
 </style>""", unsafe_allow_html=True)
 
 # ============================================================
+# 7C. FINAL SEND BUTTON VERTICAL CENTERING (CSS OVERRIDE)
+# Keep the established 60px composer and all other app styling unchanged.
+# ============================================================
+st.markdown("""<style>
+[data-testid="stChatInput"] {
+    position: relative !important;
+}
+[data-testid="stChatInput"] button {
+    position: absolute !important;
+    top: 50% !important;
+    right: 12px !important;
+    bottom: auto !important;
+    left: auto !important;
+    transform: translateY(-50%) !important;
+    margin: 0 !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    z-index: 2 !important;
+}
+[data-testid="stChatInput"] button svg {
+    display: block !important;
+    margin: 0 !important;
+    position: static !important;
+    transform: none !important;
+}
+[data-testid="stChatInput"] textarea {
+    padding-right: 68px !important;
+}
+</style>""", unsafe_allow_html=True)
+
+# ============================================================
 # 8. AUTHENTICATION PAGES
 # ============================================================
 
@@ -1365,3 +1403,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
