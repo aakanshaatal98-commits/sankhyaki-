@@ -3894,41 +3894,142 @@ def try_deterministic_question_plan(question):
 # 13. QUESTION-UNDERSTANDING LAYER
 # ============================================================
 
-_UNSUPPORTED_GEO_NAMES = {
-    "mumbai": "Mumbai is a city; the dataset contains Maharashtra at state level",
-    "delhi": "Delhi is not included among the 28 states or the India aggregate in this dataset",
-    "new delhi": "New Delhi is not a separate geography in this state-level dataset",
-    "chennai": "Chennai is a city; the dataset contains Tamil Nadu at state level",
-    "kolkata": "Kolkata is a city; the dataset contains West Bengal at state level",
-    "bengaluru": "Bengaluru is a city; the dataset contains Karnataka at state level",
-    "bangalore": "Bangalore is a city; the dataset contains Karnataka at state level",
-    "hyderabad": "Hyderabad is a city; the dataset contains Telangana at state level",
-    "pune": "Pune is a city; the dataset contains Maharashtra at state level",
+# Explicit coverage registry: all 28 states and India are supported.
+# All eight Union Territories and the cities below are outside the dataset.
+BACKEND_BUILD = "2G-2026-10-08-INDICATOR-COVERAGE"
+_UNSUPPORTED_UT_ALIASES = {
+    "Delhi": ["delhi", "new delhi", "nct delhi", "nct of delhi", "national capital territory of delhi"],
+    "Jammu and Kashmir": ["jammu and kashmir", "jammu kashmir", "j&k", "j & k", "j and k", "jk"],
+    "Puducherry": ["puducherry", "pondicherry"],
+    "Chandigarh": ["chandigarh"],
+    "Ladakh": ["ladakh"],
+    "Andaman and Nicobar Islands": ["andaman and nicobar islands", "andaman nicobar", "andaman & nicobar islands", "a&n islands", "a & n islands", "andaman islands", "nicobar islands"],
+    "Dadra and Nagar Haveli and Daman and Diu": ["dadra and nagar haveli and daman and diu", "dadra and nagar haveli", "dadra & nagar haveli", "daman and diu", "daman & diu", "dadra nagar haveli", "daman", "diu"],
+    "Lakshadweep": ["lakshadweep", "laccadive islands"],
+}
+_UNSUPPORTED_CITY_ALIASES = {
+    "Mumbai": ("Maharashtra", ["mumbai", "bombay"]),
+    "Bengaluru": ("Karnataka", ["bengaluru", "bangalore"]),
+    "Chennai": ("Tamil Nadu", ["chennai", "madras"]),
+    "Kolkata": ("West Bengal", ["kolkata", "calcutta"]),
+    "Hyderabad": ("Telangana", ["hyderabad"]),
+    "Pune": ("Maharashtra", ["pune", "poona"]),
 }
 
-def _preflight_clarification(question):
+def _unsupported_geographies_in_question(question):
     q = normalize_text(question)
-    unsupported = []
-    for name, description in _UNSUPPORTED_GEO_NAMES.items():
-        if _phrase_in_question(q, name):
-            unsupported.append((name, description))
-    # Deduplicate overlapping New Delhi / Delhi mentions.
-    if any(name == "new delhi" for name, _ in unsupported):
-        unsupported = [(name, desc) for name, desc in unsupported if name != "delhi"]
+    hits = []
+    for canonical, aliases in _UNSUPPORTED_UT_ALIASES.items():
+        if any(_phrase_in_question(q, alias) for alias in aliases):
+            hits.append((canonical, "UT", None))
+    for city, (state, aliases) in _UNSUPPORTED_CITY_ALIASES.items():
+        if any(_phrase_in_question(q, alias) for alias in aliases):
+            hits.append((city, "city", state))
+    return hits
+
+# Named out-of-scope domains are matched before Gemini or query-plan validation.
+# The dataset itself remains the authority for supported indicator names.
+# These phrases are examples, not a claim to enumerate every possible indicator.
+_UNSUPPORTED_INDICATOR_GROUPS = {
+    "national accounts and income": [
+        "gross domestic product", "gross state domestic product",
+        "gross value added", "gross state value added", "gdp", "gsdp",
+        "gva", "gsva", "national income", "national income statistics",
+        "national accounts statistics", "net national income",
+        "net state domestic product", "nsdp", "nnp",
+        "per capita income", "per capita nsdp", "per capita gdp",
+        "economic growth rate", "sectoral gva", "sectoral gsva",
+    ],
+    "public finance and fiscal statistics": [
+        "fiscal deficit", "revenue deficit", "primary deficit",
+        "budget deficit", "public debt", "state debt", "government debt",
+        "debt to gsdp", "debt gsdp ratio", "tax revenue",
+        "non tax revenue", "revenue receipts", "capital receipts",
+        "revenue expenditure", "capital expenditure", "fiscal statistics",
+        "state finances", "frbm", "contingent liabilities",
+        "outstanding liabilities", "fiscal space", "budget estimates",
+    ],
+    "prices, trade and financial markets": [
+        "consumer price index", "wholesale price index", "inflation rate",
+        "cpi inflation", "wpi inflation", "foreign direct investment",
+        "fdi inflows", "exports", "imports", "trade deficit",
+        "foreign portfolio investment", "fpi flows", "repo rate",
+        "interest rate", "exchange rate", "current account deficit",
+    ],
+}
+
+def _unsupported_indicator_mentions(question):
+    q = normalize_text(question)
+    matches = []
+    for group, phrases in _UNSUPPORTED_INDICATOR_GROUPS.items():
+        for phrase in phrases:
+            if _phrase_in_question(q, phrase):
+                # Never blacklist a phrase that is itself a verified indicator
+                # or a supported exact alias in this particular dataset.
+                if (normalize_text(phrase) in CANONICAL_INDICATOR_LOOKUP
+                        or normalize_text(phrase) in INDICATOR_ALIASES):
+                    continue
+                matches.append((phrase, group))
+    # Prefer specific phrases over shorter nested aliases (e.g. GDP in per capita GDP).
+    matches.sort(key=lambda item: len(item[0]), reverse=True)
+    distinct = []
+    for phrase, group in matches:
+        if not any(_phrase_in_question(normalize_text(existing), phrase)
+                   for existing, _ in distinct):
+            distinct.append((phrase, group))
+    return distinct
+
+def _preflight_clarification(question):
+    unsupported = _unsupported_geographies_in_question(question)
     if unsupported:
-        return ("Unsupported geography: " + "; ".join(desc for _, desc in unsupported)
-                + ". Please choose one of the 28 supported states or India. "
-                + "I will not substitute a city with its state without your confirmation.")
+        supported = _extract_states_from_question(question)
+        # Do not misrepresent supported places as absent; exclude accidental aliases.
+        supported = list(dict.fromkeys(s for s in supported if s in CANONICAL_STATES))
+        descriptions = []
+        for name, kind, parent in unsupported:
+            if kind == "UT":
+                descriptions.append(f"{name} is a Union Territory and is not included in Sankhyaki's current dataset")
+            else:
+                descriptions.append(f"{name} is a city and is not available as a separate geography in Sankhyaki's current dataset; {parent} is supported at the State level")
+        message = "; ".join(descriptions) + ". The dataset covers all 28 Indian States and the India aggregate."
+        if supported:
+            message += " " + ", ".join(supported) + (" is" if len(supported) == 1 else " are") + " supported, but I cannot produce a valid comparison without data for the unsupported geography."
+            message += " Would you like to compare " + (supported[0] if len(supported) == 1 else "one of these States") + " with another Indian State or India?"
+        else:
+            message += " Please choose one of the 28 Indian States or India."
+        if any(kind == "city" for _, kind, _ in unsupported):
+            message += " I will not automatically substitute a city with its parent State without your confirmation."
+        return message
+    # Named out-of-scope indicators get a clear answer even if Gemini is down.
+    # This is deliberately after the geography check, so a request with an
+    # unsupported UT never silently proceeds as a supported-state query.
+    unsupported_indicators = _unsupported_indicator_mentions(question)
+    if unsupported_indicators:
+        names = ", ".join(phrase for phrase, _ in unsupported_indicators[:3])
+        return (f"The requested indicator ({names}) is not present in "
+                "Sankhyaki's current demography and employment dataset. "
+                "Sankhyaki covers all 28 Indian States and the India aggregate, "
+                "but only the indicators included in its verified indicator "
+                "catalogue. I cannot provide or calculate this statistic "
+                "from the available dataset. You can ask about a supported "
+                "indicator such as unemployment rate, population density, "
+                "or forest cover.")
     indicator = _extract_indicator_from_question(question)
     if not indicator:
         states = _extract_states_from_question(question)
         if states:
-            return ("Which indicator would you like to analyse for "
-                    + ", ".join(states) + "? For example, unemployment rate, "
-                    + "population density, or forest cover. Please specify the indicator.")
-        return ("Sankhyaki supports verified state-level demography and employment "
-                "indicators for 28 states and India. Please specify a supported "
-                "geography and indicator (for example, Bihar's unemployment rate).")
+            return ("I could not identify a verified indicator from Sankhyaki's "
+                    "current dataset in your question about " + ", ".join(states)
+                    + ". If you are asking for a statistic outside the dataset, "
+                    "I cannot provide it. If you meant a supported indicator, "
+                    "please specify it (for example, unemployment rate, "
+                    "population density, or forest cover).")
+        return ("I could not identify a verified indicator in your question. "
+                "Sankhyaki only answers questions about indicators in its "
+                "demography and employment dataset, covering all 28 Indian "
+                "States and the India aggregate. Please specify a supported "
+                "indicator and geography (for example, Bihar's unemployment "
+                "rate). Statistics outside this dataset cannot be provided.")
     return None
 
 def _latest_common_comparison_year(plan):
@@ -5850,6 +5951,13 @@ def ask_demography(
     total_start = time.perf_counter()
 
     if question is not None and str(question).strip():
+        geography_clarification = _preflight_clarification(str(question).strip()) if _unsupported_geographies_in_question(str(question).strip()) else None
+        if geography_clarification:
+            return make_chatbot_result(
+                status="clarification_required", question=str(question).strip(),
+                message=geography_clarification,
+                timings={"total_seconds": time.perf_counter() - total_start},
+            )
         sex_ratio_bundle = _try_generic_sex_ratio_bundle(str(question).strip())
         if sex_ratio_bundle is not None:
             sex_ratio_bundle["timings"]["total_seconds"] = time.perf_counter() - total_start
