@@ -794,6 +794,12 @@ def _landing_background_css():
     .auth-brand-row img {{width:98px;height:98px;object-fit:contain;flex-shrink:0;}}
     .auth-brand-row .brand-name {{font-size:2.15rem;font-weight:850;line-height:1.05;color:#241B16;letter-spacing:-.035em;}}
     .auth-brand-row .brand-subtitle {{font-size:.95rem;line-height:1.18;margin-top:.18rem;color:#55483b;}}
+    /* Landing-page branding only: retain all existing interface proportions. */
+    .auth-brand-row {{gap:8px;}}
+    .auth-brand-row img {{width:120px;height:120px;}}
+    .auth-brand-row .brand-name {{font-size:2.65rem;line-height:1.03;}}
+    .auth-brand-row .brand-subtitle {{font-size:1.02rem;line-height:1.16;margin-top:.12rem;}}
+    [data-testid="stMainBlockContainer"]:has(.auth-brand-row) .hero-heading {{margin-top:1.0rem;}}
     [data-testid="stForm"] {{background:rgba(255,252,247,.91);padding:1.25rem;border-radius:16px;border:1px solid #ead7bb;}}
     @media(max-width:800px) {{
        .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"] {{background-position:52% center !important;}}
