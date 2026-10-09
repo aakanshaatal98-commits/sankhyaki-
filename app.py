@@ -800,6 +800,12 @@ def _landing_background_css():
        lift its content without changing the login form or column layout. */
     [data-testid="stMainBlockContainer"]:has(.auth-brand-row) .hero-heading {{transform:translateY(-65px);}}
     [data-testid="stMainBlockContainer"]:has(.auth-brand-row) .hero-description {{transform:translateY(-65px);}}
+    /* Lift only the login column to align its heading with the brand at upper left. */
+    @media(min-width:901px) {{
+      [data-testid="stMainBlockContainer"]:has(.auth-brand-row) [data-testid="stColumn"]:has(.login-title) {{
+        transform:translateY(-185px);
+      }}
+    }}
     [data-testid="stForm"] {{background:rgba(255,252,247,.91);padding:1.25rem;border-radius:16px;border:1px solid #ead7bb;}}
     @media(max-width:800px) {{
        .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"] {{background-position:52% center !important;}}
@@ -834,11 +840,7 @@ def render_login_page():
             "<div class='brand-subtitle'>Demography &amp; Employment<br>Data Assistant</div></div></div>",
             unsafe_allow_html=True,
         )
-    with tagline_area:
-        st.markdown(
-            "<div class='top-tagline'>Insights for a Stronger India</div>",
-            unsafe_allow_html=True,
-        )
+    # Tagline intentionally omitted to give the login panel a cleaner alignment.
 
     left_col, centre_col, right_col = st.columns(
         [1.15, 0.72, 1.05], gap="medium", vertical_alignment="center"
