@@ -429,7 +429,7 @@ def render_logo(width=58):
 # ============================================================
 
 def apply_theme_css():
-    dark = st.session_state.theme == "Dark"
+    dark = False  # Sankhyaki uses a consistent light theme
 
     bg = "#0D0D0D" if dark else "#FBF5E9"
     sidebar = "#101010" if dark else "#F8ECD7"
@@ -557,13 +557,53 @@ def apply_theme_css():
 
 
 apply_theme_css()
+st.markdown("""<style>
+.sidebar-brand {gap:.25rem !important;margin-bottom:1.05rem !important;}
+.sidebar-brand img {width:68px !important;height:68px !important;}
+[data-testid="stBottom"],[data-testid="stBottomBlockContainer"] {background:#FBF5E9 !important;}
+[data-testid="stBottomBlockContainer"] {max-width:1120px !important;width:calc(100% - 24px) !important;}
+[data-testid="stChatInput"],[data-testid="stChatInput"]>div,
+[data-testid="stChatInput"] textarea {background:#FBF5E9 !important;}
+[data-testid="stChatInput"] button {display:flex !important;align-items:center !important;justify-content:center !important;padding:0 !important;overflow:visible !important;margin:7px 4px 7px 0 !important;flex-shrink:0 !important;}
+[data-testid="stChatInput"] button svg {display:block !important;margin:auto !important;transform:none !important;}
+[data-testid="stChatMessage"] {max-width:100% !important;}
+@media(max-width:650px){[data-testid="stBottomBlockContainer"]{width:calc(100% - 12px) !important;}}
+</style>""",unsafe_allow_html=True)
 
 
 # ============================================================
 # 8. AUTHENTICATION PAGES
 # ============================================================
 
+def _landing_background_css():
+    """Full-viewport, aspect-ratio-preserving art for login and registration."""
+    bg_file = ASSETS_DIR / "sankhyaki_landing_bg.webp"
+    if not bg_file.exists():
+        return
+    encoded = base64.b64encode(bg_file.read_bytes()).decode("ascii")
+    st.markdown(f"""<style>
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {{
+        background-color:#FBF5E9 !important;
+        background-image:linear-gradient(rgba(255,250,242,.25),rgba(255,250,242,.25)),url('data:image/webp;base64,{encoded}') !important;
+        background-size:cover !important; background-position:center center !important;
+        background-repeat:no-repeat !important; background-attachment:fixed !important;
+    }}
+    [data-testid="stMainBlockContainer"] {{min-height:calc(100dvh - 4rem);}}
+    .auth-brand-row {{display:flex;align-items:center;gap:10px;}}
+    .auth-brand-row img {{width:98px;height:98px;object-fit:contain;flex-shrink:0;}}
+    .auth-brand-row .brand-name {{font-size:2.15rem;font-weight:850;line-height:1.05;color:#241B16;letter-spacing:-.035em;}}
+    .auth-brand-row .brand-subtitle {{font-size:.95rem;line-height:1.18;margin-top:.18rem;color:#55483b;}}
+    [data-testid="stForm"] {{background:rgba(255,252,247,.91);padding:1.25rem;border-radius:16px;border:1px solid #ead7bb;}}
+    @media(max-width:800px) {{
+       .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"] {{background-position:52% center !important;}}
+       .auth-brand-row img {{width:72px;height:72px;}}
+       .auth-brand-row .brand-name {{font-size:1.75rem;}}
+    }}
+    </style>""",unsafe_allow_html=True)
+
+
 def _hide_sidebar_for_auth():
+    _landing_background_css()
     st.markdown(
         """
         <style>
@@ -581,15 +621,12 @@ def render_login_page():
     # Keep the current landing-page concept frozen for now.
     brand_area, tagline_area = st.columns([3, 1], vertical_alignment="center")
     with brand_area:
-        logo_col, name_col = st.columns([0.25, 2.75], vertical_alignment="center")
-        with logo_col:
-            render_logo(68)
-        with name_col:
-            st.markdown(
-                "<div class='brand-name'>Sankhyaki</div>"
-                "<div class='brand-subtitle'>Demography &amp; Employment<br>Data Assistant</div>",
-                unsafe_allow_html=True,
-            )
+        st.markdown(
+            f"<div class='auth-brand-row'><img src='{logo_data_uri()}' alt='Sankhyaki logo'>"
+            "<div><div class='brand-name'>Sankhyaki</div>"
+            "<div class='brand-subtitle'>Demography &amp; Employment<br>Data Assistant</div></div></div>",
+            unsafe_allow_html=True,
+        )
     with tagline_area:
         st.markdown(
             "<div class='top-tagline'>Insights for a Stronger India</div>",
@@ -609,7 +646,7 @@ def render_login_page():
         )
 
     with centre_col:
-        st.markdown("<div style='height:300px'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='hero-art-clearance' style='min-height:230px'></div>", unsafe_allow_html=True)
 
     with right_col:
         st.markdown(
@@ -647,7 +684,7 @@ def render_login_page():
             st.session_state.auth_page = "register"
             st.rerun()
 
-    st.markdown("<div class='bottom-waves'></div>", unsafe_allow_html=True)
+    # Background image includes the decorative bottom waves.
 
 
 def render_register_page():
@@ -713,19 +750,16 @@ def render_sidebar():
     user = st.session_state.user or {}
     with st.sidebar:
         # Canonical logo + product name. Navigation is intentionally left-aligned.
-        c1, c2 = st.columns([0.34, 0.66], vertical_alignment="center")
-        with c1:
-            render_logo(58)
-        with c2:
-            st.markdown(
-                "<div class='sidebar-product-name'>Sankhyaki</div>"
-                "<div class='sidebar-product-subtitle'>Demography &amp; Employment<br>Data Assistant</div>",
-                unsafe_allow_html=True,
-            )
+        st.markdown(
+            f"<div class='sidebar-brand'><img src='{logo_data_uri()}' alt='Sankhyaki'>"
+            "<div><div class='sidebar-product-name'>Sankhyaki</div>"
+            "<div class='sidebar-product-subtitle'>Demography &amp; Employment<br>Data Assistant</div>"
+            "</div></div>", unsafe_allow_html=True,
+        )
 
         if st.button("＋   New Notebook", key="nav_new", use_container_width=True):
             start_new_notebook(save_existing=True); st.rerun()
-        if st.button("▣   Workspace", key="nav_workspace", use_container_width=True):
+        if st.button("🖥   Workspace", key="nav_workspace", use_container_width=True):
             navigate("Workspace"); st.rerun()
         if st.button("↗   Alt Data", key="nav_alt", use_container_width=True):
             navigate("Alt Data"); st.rerun()
@@ -735,15 +769,6 @@ def render_sidebar():
         st.markdown(
             f"<div class='profile-card'><div class='profile-name'>● &nbsp; {user.get('name','')}</div>"
             f"<div class='profile-email'>{user.get('email','')}</div></div>", unsafe_allow_html=True)
-
-        selected_theme = st.selectbox(
-            "Appearance", ["☀  Light", "☾  Dark"],
-            index=0 if st.session_state.theme == "Light" else 1,
-            label_visibility="collapsed",
-        )
-        new_theme = "Dark" if "Dark" in selected_theme else "Light"
-        if new_theme != st.session_state.theme:
-            st.session_state.theme = new_theme; st.rerun()
 
         if st.button("Sign out", key="nav_signout", use_container_width=True):
             save_current_notebook(); logout_user(); st.rerun()
@@ -941,6 +966,14 @@ def render_chat_page():
                     render_backend_result(message["result"])
                 elif message.get("content"):
                     st.markdown(message["content"])
+                # Streamlit's native code widget provides a reliable clipboard button.
+                # Same rendering path is used for active and reopened saved notebooks.
+                copy_text = str(message.get("content") or "")
+                if role == "assistant" and isinstance(message.get("result"), dict):
+                    copy_text = str(message["result"].get("answer") or message["result"].get("response") or copy_text)
+                if copy_text.strip():
+                    with st.popover("⧉ Copy", help="Copy this message to your clipboard"):
+                        st.code(copy_text, language=None, wrap_lines=True)
 
     prompt = st.chat_input("Ask Sankhyaki...")
     if prompt:
