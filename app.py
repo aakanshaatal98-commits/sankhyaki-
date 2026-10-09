@@ -597,6 +597,89 @@ st.markdown("""<style>
 </style>""",unsafe_allow_html=True)
 
 # ============================================================
+# 7A. FINAL VIEWPORT / CHAT COMPOSER POLISH (2026-10-09)
+# These are intentionally narrow overrides: do not resize the logo,
+# login form, sidebar or alter any application/business logic.
+# ============================================================
+st.markdown("""<style>
+/* Give the registration button real breathing room without shrinking it.
+   The additional room comes from a small upward shift of the auth content,
+   not from changing the original form or logo dimensions. */
+.st-key-create_account_from_login {
+    margin-bottom: 2.35rem !important;
+}
+/* Keep the login content clear of the lower-right Cloud owner overlay. */
+@media (min-width: 901px) and (min-height: 650px) {
+    [data-testid="stMainBlockContainer"]:has(.auth-brand-row) {
+        padding-top: 1.15rem !important;
+        padding-bottom: 3.5rem !important;
+    }
+}
+
+/* Composer: cover the full bottom width in the same beige as the app,
+   and lift the input enough to clear Streamlit's floating owner control. */
+[data-testid="stBottom"] {
+    background: #FBF5E9 !important;
+    padding: 0 0 56px !important;
+    border: 0 !important;
+}
+[data-testid="stBottomBlockContainer"] {
+    background: #FBF5E9 !important;
+    max-width: none !important;
+    width: 100% !important;
+    padding: 0 24px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+[data-testid="stBottom"]:before,
+[data-testid="stBottom"]:after {
+    background: #FBF5E9 !important;
+}
+/* Only the outer composer gets a border, including on focus. */
+[data-testid="stChatInput"] {
+    background: #FBF5E9 !important;
+    border: 1px solid #E7D3B2 !important;
+    border-radius: 15px !important;
+    outline: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+}
+[data-testid="stChatInput"]:focus-within {
+    border-color: #D9A34E !important;
+    outline: none !important;
+    box-shadow: 0 0 0 1px rgba(217,163,78,.20) !important;
+}
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] > div:focus-within,
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] textarea:focus,
+[data-testid="stChatInput"] textarea:focus-visible,
+[data-testid="stChatInput"] [data-baseweb="textarea"],
+[data-testid="stChatInput"] [data-baseweb="textarea"]:focus-within,
+[data-testid="stChatInput"] [data-baseweb="base-input"],
+[data-testid="stChatInput"] [data-baseweb="base-input"]:focus-within {
+    background: #FBF5E9 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+/* BaseWeb often draws a second border using an inner div/pseudo-element. */
+[data-testid="stChatInput"] [data-baseweb="textarea"]::before,
+[data-testid="stChatInput"] [data-baseweb="textarea"]::after,
+[data-testid="stChatInput"] [data-baseweb="base-input"]::before,
+[data-testid="stChatInput"] [data-baseweb="base-input"]::after {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+}
+@media (max-width: 650px) {
+    [data-testid="stBottom"] {padding-bottom: 28px !important;}
+    [data-testid="stBottomBlockContainer"] {padding: 0 10px !important;}
+}
+</style>""", unsafe_allow_html=True)
+
+# ============================================================
 # 8. AUTHENTICATION PAGES
 # ============================================================
 
