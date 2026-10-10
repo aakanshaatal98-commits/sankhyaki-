@@ -5944,6 +5944,78 @@ def _try_generic_sex_ratio_bundle(question):
         timings={},
     )
 
+# ============================================================
+# 18A. APPLICATION-LEVEL DATASET INFORMATION
+# ============================================================
+
+APP_DATA_SOURCES = (
+    "the Census of India; the Population Projections for India and States "
+    "2011–2036, prepared by the Technical Group on Population Projections "
+    "under the National Commission on Population, Ministry of Health and "
+    "Family Welfare, Government of India; the National Family Health Survey "
+    "(NFHS); the Forest Survey of India (FSI); the Sustainable Development "
+    "Goals (SDG) Index published by NITI Aayog; and the Annual Reports of "
+    "the Periodic Labour Force Survey (PLFS)"
+)
+
+
+def _is_application_dataset_question(question):
+    """Route general app/dataset provenance questions, not indicator sources."""
+    q = normalize_text(question)
+    if not q:
+        return False
+
+    # A specific indicator or state belongs to the established analytical /
+    # indicator-metadata pipeline, even if the user mentions 'the app'.
+    if _extract_states_from_question(question):
+        return False
+    for alias in INDICATOR_ALIASES:
+        # Ignore short generic aliases to avoid spurious matches.
+        if len(alias) >= 5 and re.search(r"(?<!\w)" + re.escape(alias) + r"(?!\w)", q):
+            return False
+
+    # Explicit app-level referents plus provenance/overview vocabulary.
+    app_ref = bool(re.search(
+        r"\b(sankhyaki|this app|the app|application|chatbot|"
+        r"this dataset|the dataset|your dataset|data used|"
+        r"data behind|data powering)\b", q
+    ))
+    source_ref = bool(re.search(
+        r"\b(source|sources|sourced|provenance|origin|origins|"
+        r"where.*(data|get.*data)|data.*come from|compiled|collected|"
+        r"dataset overview|dataset information|about the dataset|"
+        r"dataset coverage|what data|which data|"
+        r"how many indicators|how many observations|"
+        r"how many geographies)\b", q
+    ))
+    if app_ref and source_ref:
+        return True
+
+    return bool(re.search(
+        r"\b(which|what|list|tell me|give me)\b.*"
+        r"\b(government|official|statistical)\b.*\b(sources|data sources)\b",
+        q
+    ))
+
+
+def _application_dataset_answer():
+    """Standardized, non-generative response to application-level questions."""
+    return (
+        "Sankhyaki is built on a structured dataset containing demographic "
+        "and employment indicators for Indian states and the national aggregate. "
+        "The dataset has been compiled from multiple official statistical "
+        f"sources, including {APP_DATA_SOURCES}. Together, these sources "
+        "provide information on population characteristics, demographic "
+        "structure, urbanisation, social composition, poverty, environmental "
+        "characteristics, labour force participation, unemployment, and "
+        "sectoral employment.\n\n"
+        "The final analytical dataset contains 19,852 observations, covering "
+        "29 geographies (28 Indian states and the national aggregate) and "
+        "68 indicators. Each observation represents an available combination "
+        "of geography, year, and indicator after preprocessing."
+    )
+
+
 def ask_demography(
     question
 ):
@@ -5975,6 +6047,17 @@ def ask_demography(
         return make_chatbot_result(
             status="invalid", question=question,
             message="Please enter a question about the demography and employment dataset.",
+            timings={"total_seconds": time.perf_counter() - total_start},
+        )
+
+    # Answer questions about Sankhyaki's dataset without requiring a
+    # statistical indicator, geography, QueryPlan, or Gemini call.
+    if _is_application_dataset_question(question):
+        return make_chatbot_result(
+            status="success",
+            question=question,
+            answer=_application_dataset_answer(),
+            parser={"success": True, "parser_mode": "deterministic_app_information"},
             timings={"total_seconds": time.perf_counter() - total_start},
         )
 
