@@ -31,11 +31,11 @@ DATA_DIR = PROJECT_DIR / "data"
 USER_DB_FILE = PROJECT_DIR / "users.db"
 FACT_FILE = DATA_DIR / "demography_long_semantic.csv"
 
-# Keep the existing logo asset for now. The final Sankhyaki logo can
-# replace this file later without changing the application code.
-LOGO_FILE = ASSETS_DIR / "sankhyaki_logo.png"
-# Canonical high-definition Sankhyaki logo supplied for the final interface.
-# Save that image as assets/sankhyaki_logo.png.
+# Use the final logo already committed to the GitHub assets directory.
+# Retain the previous logo as a fallback for older deployments.
+FINAL_LOGO_FILE = ASSETS_DIR / "Final logo.png"
+LEGACY_LOGO_FILE = ASSETS_DIR / "sankhyaki_logo.png"
+LOGO_FILE = FINAL_LOGO_FILE if FINAL_LOGO_FILE.is_file() else LEGACY_LOGO_FILE
 
 st.set_page_config(
     page_title="Sankhyaki",
