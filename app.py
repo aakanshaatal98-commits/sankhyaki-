@@ -909,37 +909,37 @@ def render_register_page():
     # entire heading/form/navigation group upward. Login and chat are unchanged.
     st.markdown("<div class='register-page-marker'></div>", unsafe_allow_html=True)
     st.markdown("""<style>
-    /* Apply these rules only when the registration page is displayed. */
+    /* Registration ONLY. Use real layout spacing, not a visual transform:
+       transforms move pixels but leave the original empty layout space. */
     [data-testid="stMainBlockContainer"]:has(.register-page-marker) {
-        padding-top: .75rem !important;
-        padding-bottom: 2rem !important;
+        padding-top: 0.35rem !important;
+        padding-bottom: 7rem !important;
+        min-height: 100dvh !important;
+        box-sizing: border-box !important;
     }
     [data-testid="stMainBlockContainer"]:has(.register-page-marker)
-    [data-testid="stColumn"]:has(.login-title) {
-        margin-top: -5.5rem !important;
-    }
-    [data-testid="stMainBlockContainer"]:has(.register-page-marker) .login-title {
+    [data-testid="stColumn"]:has(.register-heading) {
         margin-top: 0 !important;
-        line-height: 1.18 !important;
+        transform: none !important;
     }
-    @media (max-width: 900px) {
-        [data-testid="stMainBlockContainer"]:has(.register-page-marker)
-        [data-testid="stColumn"]:has(.login-title) {
-            margin-top: -1.5rem !important;
-        }
-    }
-    @media (max-height: 740px) and (min-width: 901px) {
-        [data-testid="stMainBlockContainer"]:has(.register-page-marker)
-        [data-testid="stColumn"]:has(.login-title) {
-            margin-top: -3rem !important;
-        }
+    [data-testid="stMainBlockContainer"]:has(.register-page-marker)
+    .login-title { margin-top: 0 !important; line-height: 1.18 !important; }
+    /* Avoid overlarge vertical gaps between the title, card and sign-in link. */
+    [data-testid="stMainBlockContainer"]:has(.register-page-marker)
+    .login-subtitle { margin-bottom: .65rem !important; }
+    [data-testid="stMainBlockContainer"]:has(.register-page-marker)
+    .account-question { margin-top: .4rem !important; }
+    @media (max-width: 700px) {
+      [data-testid="stMainBlockContainer"]:has(.register-page-marker) {
+          padding-bottom: 5rem !important;
+      }
     }
     </style>""", unsafe_allow_html=True)
 
     left, centre, right = st.columns([1.2, 1, 1.2])
     with centre:
         st.markdown(
-            "<div class='login-title'>Create your Sankhyaki account</div>"
+            "<div class='login-title register-heading'>Create your Sankhyaki account</div>"
             "<div class='login-subtitle'>Create an account to continue</div>",
             unsafe_allow_html=True,
         )
@@ -978,6 +978,14 @@ def render_register_page():
         if st.button("← Back to sign in", use_container_width=True):
             st.session_state.auth_page = "login"
             st.rerun()
+        # A real, flow-layout spacer guarantees visible space below the last
+        # button, even on short laptop viewports and when the page scrolls.
+        st.markdown(
+            "<div class='register-bottom-clearance' aria-hidden='true'></div>"
+            "<style>.register-bottom-clearance{height:110px;}"
+            "@media(max-width:700px){.register-bottom-clearance{height:72px;}}</style>",
+            unsafe_allow_html=True,
+        )
 
 
 def render_authentication():
