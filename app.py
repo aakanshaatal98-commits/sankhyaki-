@@ -33,9 +33,10 @@ FACT_FILE = DATA_DIR / "demography_long_semantic.csv"
 
 # Use the final logo already committed to the GitHub assets directory.
 # Retain the previous logo as a fallback for older deployments.
+TRANSPARENT_LOGO_FILE = ASSETS_DIR / "sankhyaki_logo_transparent.png"
 FINAL_LOGO_FILE = ASSETS_DIR / "Final logo.png"
 LEGACY_LOGO_FILE = ASSETS_DIR / "sankhyaki_logo.png"
-LOGO_FILE = FINAL_LOGO_FILE if FINAL_LOGO_FILE.is_file() else LEGACY_LOGO_FILE
+LOGO_FILE = next((path for path in (TRANSPARENT_LOGO_FILE, FINAL_LOGO_FILE, LEGACY_LOGO_FILE) if path.is_file()), LEGACY_LOGO_FILE)
 
 st.set_page_config(
     page_title="Sankhyaki",
