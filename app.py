@@ -905,9 +905,39 @@ def render_login_page():
 def render_register_page():
     _hide_sidebar_for_auth()
 
+    # Registration-only layout: remove the redundant top logo and move the
+    # entire heading/form/navigation group upward. Login and chat are unchanged.
+    st.markdown("<div class='register-page-marker'></div>", unsafe_allow_html=True)
+    st.markdown("""<style>
+    /* Apply these rules only when the registration page is displayed. */
+    [data-testid="stMainBlockContainer"]:has(.register-page-marker) {
+        padding-top: .75rem !important;
+        padding-bottom: 2rem !important;
+    }
+    [data-testid="stMainBlockContainer"]:has(.register-page-marker)
+    [data-testid="stColumn"]:has(.login-title) {
+        margin-top: -5.5rem !important;
+    }
+    [data-testid="stMainBlockContainer"]:has(.register-page-marker) .login-title {
+        margin-top: 0 !important;
+        line-height: 1.18 !important;
+    }
+    @media (max-width: 900px) {
+        [data-testid="stMainBlockContainer"]:has(.register-page-marker)
+        [data-testid="stColumn"]:has(.login-title) {
+            margin-top: -1.5rem !important;
+        }
+    }
+    @media (max-height: 740px) and (min-width: 901px) {
+        [data-testid="stMainBlockContainer"]:has(.register-page-marker)
+        [data-testid="stColumn"]:has(.login-title) {
+            margin-top: -3rem !important;
+        }
+    }
+    </style>""", unsafe_allow_html=True)
+
     left, centre, right = st.columns([1.2, 1, 1.2])
     with centre:
-        render_logo(58)
         st.markdown(
             "<div class='login-title'>Create your Sankhyaki account</div>"
             "<div class='login-subtitle'>Create an account to continue</div>",
