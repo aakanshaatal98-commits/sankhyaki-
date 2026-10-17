@@ -5254,6 +5254,42 @@ def evidence_to_dataframe(
         records
     )
 
+
+# ============================================================
+# PRESENTATION-ONLY CHART FORMATTING (NO DATA TRANSFORMATION)
+# ============================================================
+def format_statistical_chart(fig, indicator, *, horizontal=False, year_axis=False):
+    """Keep full source values, readable units, and non-abbreviated axes."""
+    indicator = str(indicator or "").strip()
+    is_percent = indicator.endswith("(%)")
+    is_area = "sq km" in indicator.lower() or "sq. km" in indicator.lower()
+    unit = "%" if is_percent else (" sq km" if is_area else "")
+    # Plotly's SI-prefix autoformat turns 275045 into 275.045k; disable it.
+    axis_kwargs = dict(tickformat=",.2f" if is_percent else ",~f", exponentformat="none", showexponent="none")
+    if is_percent:
+        axis_kwargs.update(ticksuffix="%", tickformat=",~f")
+    if horizontal:
+        fig.update_xaxes(**axis_kwargs, title_text="Percentage (%)" if is_percent else ("Area (sq km)" if is_area else indicator))
+    else:
+        fig.update_yaxes(**axis_kwargs, title_text="Percentage (%)" if is_percent else ("Area (sq km)" if is_area else indicator))
+    # % is an actual unit in the source data, not a multiplier (do not use .0%).
+    value_hover = "%{x:,.2f}" if horizontal else "%{y:,.2f}"
+    if is_percent:
+        value_hover += "%"
+    elif is_area:
+        value_hover += " sq km"
+    # Show a concise, consistent hover label without scientific notation or k.
+    if horizontal:
+        fig.update_traces(hovertemplate="State: %{y}<br>Value: " + value_hover + "<extra></extra>")
+    elif year_axis:
+        fig.update_traces(hovertemplate="Year: %{x:.0f}<br>Value: " + value_hover + "<extra></extra>")
+    else:
+        fig.update_traces(hovertemplate="%{x}<br>Value: " + value_hover + "<extra>%{fullData.name}</extra>")
+    if year_axis:
+        fig.update_xaxes(tickmode="linear", dtick=1, tickformat="d", title_text="Year")
+    fig.update_layout(margin=dict(l=65, r=25, t=70, b=55))
+    return fig
+
 def create_trend_chart(
     evidence
 ):
@@ -5346,6 +5382,7 @@ def create_trend_chart(
         hovermode="x unified"
     )
 
+    format_statistical_chart(fig, evidence.get("indicator"), horizontal=False, year_axis=True)
     return make_chart_result(
         chart_created=True,
         figure=fig,
@@ -5394,6 +5431,7 @@ def create_comparison_chart(
         )
         fig.update_layout(xaxis_title="Geography", yaxis_title=evidence.get("indicator"))
 
+    format_statistical_chart(fig, evidence.get("indicator"), horizontal=False)
     return make_chart_result(chart_created=True, figure=fig, chart_type="grouped_bar")
 
 def create_ranking_chart(
@@ -5483,6 +5521,7 @@ def create_ranking_chart(
         yaxis_title="State"
     )
 
+    format_statistical_chart(fig, evidence.get("indicator"), horizontal=True)
     return make_chart_result(
         chart_created=True,
         figure=fig,
@@ -5541,6 +5580,7 @@ def create_calculation_chart(
         yaxis_title=evidence.get("indicator"),
         legend_title_text="Year",
     )
+    format_statistical_chart(fig, evidence.get("indicator"), horizontal=False)
     return make_chart_result(chart_created=True, figure=fig, chart_type="start_end_grouped_bar")
 
 def generate_automatic_chart(
