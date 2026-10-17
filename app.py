@@ -18,7 +18,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from backend import ask_demography
+from backend import ask_demography, format_statistical_chart
 
 
 # ============================================================
@@ -1336,7 +1336,9 @@ def render_alt_data():
             st.info("No observations are available for this state-indicator combination.")
         else:
             fig = px.line(subset, x="Year", y="Value", markers=True, title=f"{indicator} — {state}")
-            fig.update_layout(xaxis_title="Year", yaxis_title=indicator)
+            format_statistical_chart(fig, indicator, year_axis=True)
+            if len(subset) == 1:
+                fig.update_yaxes(rangemode="tozero")
             st.plotly_chart(fig, use_container_width=True)
             st.dataframe(subset[["State", "Year", "Indicator", "Value"]], use_container_width=True, hide_index=True)
 
@@ -1359,6 +1361,7 @@ def render_alt_data():
                 st.info("No observations are available for this indicator and year.")
             else:
                 fig = px.bar(display.sort_values("Value"), x="Value", y="State", orientation="h", title=f"{indicator2} — {year}")
+                format_statistical_chart(fig, indicator2, horizontal=True)
                 st.plotly_chart(fig, use_container_width=True)
                 st.dataframe(display[["State", "Year", "Value"]], use_container_width=True, hide_index=True)
 
