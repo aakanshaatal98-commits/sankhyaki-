@@ -17,6 +17,7 @@ from pathlib import Path
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from streamlit_copy_to_clipboard import st_copy_to_clipboard
 
 from backend import ask_demography, format_statistical_chart
 
@@ -1212,21 +1213,25 @@ def render_chat_page():
     else:
         st.markdown(f"<div class='page-header'>{st.session_state.notebook_title}</div>", unsafe_allow_html=True)
         st.caption("Sankhyaki · Demography & Employment Data Assistant")
-        for message in st.session_state.messages:
+        for message_index, message in enumerate(st.session_state.messages):
             role = message.get("role", "assistant")
             with st.chat_message(role):
                 if role == "assistant" and message.get("result"):
                     render_backend_result(message["result"])
                 elif message.get("content"):
                     st.markdown(message["content"])
-                # Streamlit's native code widget provides a reliable clipboard button.
-                # Same rendering path is used for active and reopened saved notebooks.
+                # One-click copy for assistant answers, including reopened notebooks.
+                # The clipboard component avoids popovers and code-block panels.
                 copy_text = str(message.get("content") or "")
                 if role == "assistant" and isinstance(message.get("result"), dict):
                     copy_text = str(message["result"].get("answer") or message["result"].get("response") or copy_text)
                 if role == "assistant" and copy_text.strip():
-                    with st.popover("⧉ Copy", help="Copy this answer to your clipboard"):
-                        st.code(copy_text, language=None, wrap_lines=True)
+                    st_copy_to_clipboard(
+                        copy_text,
+                        before_copy_label="⧉ Copy",
+                        after_copy_label="✓ Copied!",
+                        key=f"assistant_copy_{message_index}",
+                    )
 
     prompt = st.chat_input("Ask Sankhyaki...")
     if prompt:
