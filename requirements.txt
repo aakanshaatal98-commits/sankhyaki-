@@ -6,3 +6,4 @@ pydantic>=2.0,<3
 python-dotenv>=1.0,<2
 google-genai>=1.0,<2
 plotly>=5.20,<7
+streamlit-copy-to-clipboard
